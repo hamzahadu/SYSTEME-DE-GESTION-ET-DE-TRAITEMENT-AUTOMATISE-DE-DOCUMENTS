@@ -1,0 +1,20 @@
+[
+  {
+    "id": "d92cf67b-621d-49d5-9878-ea849fc6f757",
+    "email": "haddouhamza2000@gmail.com",
+    "full_name": "hamza",
+    "hashed_password": "$pbkdf2-sha256$29000$0dpb6x2jlFKKMQYghJBy7g$ufWDN8k/CvE6YNXcJn5w5OS2egyk5sBa3.dhimgRoYY",
+    "company_id": "137d880b-c7ec-4e93-be45-9db282b04173",
+    "role": "admin",
+    "disabled": false
+  },
+  {
+    "id": "b855b188-e20c-4571-90d9-50caa7e6db63",
+    "email": "Hamzaplays8@gmail.com",
+    "full_name": "gegedge hamza",
+    "hashed_password": "$pbkdf2-sha256$29000$prR2znlP6X2P0Xpv7V3rHQ$fiVIVpDRiY8zUX1xkFEUnEBo99mGa9cOpxzlevspyeM",
+    "company_id": "d90f8544-b967-4031-bf1c-d2c9018b730f",
+    "role": "admin",
+    "disabled": false
+  }
+]
