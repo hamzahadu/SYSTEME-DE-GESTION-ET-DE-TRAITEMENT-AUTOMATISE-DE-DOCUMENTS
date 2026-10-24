@@ -1,19 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import {
     User, Mail, Lock, LogOut, Phone, Shield, ShieldCheck,
-    Check, Copy, CheckCircle2, AlertCircle, Building2,
-    Sparkles, GraduationCap, Calculator, Eye, Moon, Sun, Globe
+    Check, CheckCircle2, AlertCircle,
+    GraduationCap, Calculator, Eye
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { useTheme } from '../context/ThemeContext';
 
 export const Profile = () => {
     const { user, logout, updateProfile } = useAuth();
-    const { t, lang, toggleLang } = useLanguage();
-    const { theme, toggleTheme } = useTheme();
+    const { t, lang } = useLanguage();
 
     // Split user full_name into first and last name if possible
     const parseName = (fullName = '') => {
@@ -43,7 +41,6 @@ export const Profile = () => {
     // Feedback state
     const [isSaving, setIsSaving] = useState(false);
     const [feedback, setFeedback] = useState(null); // { type: 'success' | 'error', message: '' }
-    const [copiedId, setCopiedId] = useState(false);
 
     useEffect(() => {
         if (user) {
@@ -55,13 +52,6 @@ export const Profile = () => {
             setRole(user.role || 'admin');
         }
     }, [user]);
-
-    const handleCopyCompanyId = () => {
-        if (!user?.company_id) return;
-        navigator.clipboard.writeText(user.company_id);
-        setCopiedId(true);
-        setTimeout(() => setCopiedId(false), 2500);
-    };
 
     const handleSave = async (e) => {
         if (e) e.preventDefault();
@@ -168,14 +158,13 @@ export const Profile = () => {
     ];
 
     const currentFullName = `${firstName} ${lastName}`.trim() || user?.full_name || 'Utilisateur';
-    const userInitial = currentFullName.charAt(0).toUpperCase() || 'U';
 
     return (
         <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2 }}
-            className="w-full max-w-6xl mx-auto space-y-6 pb-20 font-sans"
+            className="w-full space-y-6 pb-20 font-sans"
         >
             {/* Feedback Notification Banner */}
             <AnimatePresence>
@@ -201,7 +190,7 @@ export const Profile = () => {
                         </div>
                         <button
                             onClick={() => setFeedback(null)}
-                            className="text-xs font-bold hover:underline opacity-70 hover:opacity-100"
+                            className="text-xs font-bold hover:underline opacity-70 hover:opacity-100 cursor-pointer"
                         >
                             ✕
                         </button>
@@ -214,17 +203,11 @@ export const Profile = () => {
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     {/* User Identity Info */}
                     <div className="flex items-center gap-5">
-                        <div className="relative shrink-0">
-                            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center text-white text-3xl sm:text-4xl font-black shadow-xl shadow-blue-600/20 ring-4 ring-white dark:ring-zinc-800">
-                                {userInitial}
-                            </div>
-                            <span
-                                className="absolute bottom-1 right-1 w-5 h-5 bg-emerald-500 border-2 border-white dark:border-zinc-900 rounded-full shadow-xs"
-                                title={t('lbl_status_active')}
-                            />
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-blue-600 dark:bg-zinc-800 text-white dark:text-blue-400 border border-blue-500/30 dark:border-zinc-700 flex items-center justify-center shadow-lg shadow-blue-600/15 shrink-0">
+                            <User size={34} strokeWidth={2.2} />
                         </div>
 
-                        <div className="min-w-0 space-y-1.5">
+                        <div className="min-w-0 space-y-1">
                             <div className="flex flex-wrap items-center gap-2.5">
                                 <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight truncate">
                                     {currentFullName}
@@ -232,30 +215,11 @@ export const Profile = () => {
                                 <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/40 uppercase tracking-wider">
                                     {role}
                                 </span>
-                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/40">
-                                    <Check size={12} /> {t('lbl_status_active')}
-                                </span>
                             </div>
 
                             <p className="text-sm text-gray-500 dark:text-zinc-400 font-medium">
                                 {email}
                             </p>
-
-                            <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-gray-500 dark:text-zinc-400">
-                                <span className="flex items-center gap-1.5 font-medium">
-                                    <Building2 size={14} className="text-gray-400 dark:text-zinc-500" />
-                                    {t('lbl_company_account')}:
-                                </span>
-                                <code className="bg-gray-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md font-mono text-gray-800 dark:text-zinc-300 text-[11px] border border-gray-200 dark:border-zinc-700">
-                                    {user?.company_id ? user.company_id.slice(0, 16) : 'default-workspace'}...
-                                </code>
-                                <button
-                                    onClick={handleCopyCompanyId}
-                                    className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-semibold"
-                                >
-                                    <Copy size={12} /> {copiedId ? t('copied_to_clipboard') : 'Copier'}
-                                </button>
-                            </div>
                         </div>
                     </div>
 
@@ -264,7 +228,7 @@ export const Profile = () => {
                         <button
                             onClick={handleSave}
                             disabled={isSaving}
-                            className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-lg shadow-blue-600/20 transition-all disabled:opacity-50"
+                            className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-lg shadow-blue-600/20 transition-all disabled:opacity-50 cursor-pointer"
                         >
                             <CheckCircle2 size={18} />
                             <span>{isSaving ? t('btn_saving') : t('btn_save_profile')}</span>
@@ -272,7 +236,7 @@ export const Profile = () => {
 
                         <button
                             onClick={logout}
-                            className="flex items-center gap-2 px-4 py-3 rounded-2xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 font-bold text-sm border border-red-200 dark:border-red-900/40 transition-colors"
+                            className="flex items-center gap-2 px-4 py-3 rounded-2xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 font-bold text-sm border border-red-200 dark:border-red-900/40 transition-colors cursor-pointer"
                         >
                             <LogOut size={18} />
                             <span className="hidden sm:inline">{t('btn_logout')}</span>
@@ -441,7 +405,7 @@ export const Profile = () => {
                     </div>
                 </div>
 
-                {/* Right Column: Security & Preferences */}
+                {/* Right Column: Security & Mot de Passe */}
                 <div className="space-y-6">
                     {/* Section 3: Sécurité & Mot de Passe */}
                     <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 sm:p-8 border border-gray-200/80 dark:border-zinc-800 shadow-sm transition-colors space-y-5">
@@ -507,98 +471,12 @@ export const Profile = () => {
                         </div>
                     </div>
 
-                    {/* Section 4: Organisation & Espace de Travail */}
-                    <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 sm:p-8 border border-gray-200/80 dark:border-zinc-800 shadow-sm transition-colors space-y-4">
-                        <div className="flex items-center gap-3 pb-3 border-b border-gray-100 dark:border-zinc-800">
-                            <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
-                                <Building2 size={20} />
-                            </div>
-                            <div>
-                                <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                                    {t('profile_workspace_title')}
-                                </h2>
-                                <p className="text-xs text-gray-500 dark:text-zinc-400">
-                                    {lang === 'fr' ? 'Configuration multi-tenant isolée' : 'Tenant partition & workspace parameters'}
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="space-y-3 text-xs">
-                            <div className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-zinc-800/60">
-                                <span className="text-gray-500 dark:text-zinc-400 font-medium">{t('lbl_company_account')}</span>
-                                <span className="font-bold text-gray-900 dark:text-white">
-                                    {user?.company_name || 'Master PFE Maroc'}
-                                </span>
-                            </div>
-
-                            <div className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-zinc-800/60">
-                                <span className="text-gray-500 dark:text-zinc-400 font-medium">Plan Système</span>
-                                <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-bold border border-blue-200 dark:border-blue-900/40">
-                                    Master Pro / Illimité
-                                </span>
-                            </div>
-
-                            <div className="flex justify-between items-center py-1.5">
-                                <span className="text-gray-500 dark:text-zinc-400 font-medium">Base de Données</span>
-                                <span className="font-semibold text-gray-700 dark:text-zinc-300">
-                                    PostgreSQL / RAG Chunks
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Section 5: Préférences Rapides (Theme & Language) */}
-                    <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 sm:p-8 border border-gray-200/80 dark:border-zinc-800 shadow-sm transition-colors space-y-4">
-                        <div className="flex items-center gap-3 pb-3 border-b border-gray-100 dark:border-zinc-800">
-                            <div className="w-10 h-10 rounded-2xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold">
-                                <Sparkles size={20} />
-                            </div>
-                            <div>
-                                <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                                    {t('profile_preferences')}
-                                </h2>
-                                <p className="text-xs text-gray-500 dark:text-zinc-400">
-                                    {lang === 'fr' ? 'Thème d’affichage et langue de l’interface' : 'Theme style and interface language'}
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3">
-                            {/* Theme switcher button */}
-                            <button
-                                onClick={toggleTheme}
-                                className="flex items-center justify-center gap-2 p-3 rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 font-bold text-xs text-gray-800 dark:text-zinc-200 transition-all"
-                            >
-                                {theme === 'dark' ? (
-                                    <>
-                                        <Sun size={16} className="text-amber-400" />
-                                        <span>{t('light_mode')}</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Moon size={16} className="text-gray-700" />
-                                        <span>{t('dark_mode')}</span>
-                                    </>
-                                )}
-                            </button>
-
-                            {/* Language switcher button */}
-                            <button
-                                onClick={toggleLang}
-                                className="flex items-center justify-center gap-2 p-3 rounded-2xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 font-bold text-xs text-gray-800 dark:text-zinc-200 transition-all"
-                            >
-                                <Globe size={16} className="text-blue-500" />
-                                <span>{lang === 'fr' ? 'English (EN)' : 'Français (FR)'}</span>
-                            </button>
-                        </div>
-                    </div>
-
                     {/* Bottom Save Button */}
-                    <div className="pt-2">
+                    <div>
                         <button
                             onClick={handleSave}
                             disabled={isSaving}
-                            className="w-full flex items-center justify-center gap-2 py-4 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-xl shadow-blue-600/20 transition-all disabled:opacity-50"
+                            className="w-full flex items-center justify-center gap-2 py-4 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-xl shadow-blue-600/20 transition-all disabled:opacity-50 cursor-pointer"
                         >
                             <CheckCircle2 size={18} />
                             <span>{isSaving ? t('btn_saving') : t('btn_save_profile')}</span>

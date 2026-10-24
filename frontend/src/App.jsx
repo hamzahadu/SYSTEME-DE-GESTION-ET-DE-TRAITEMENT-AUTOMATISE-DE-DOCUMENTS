@@ -21,7 +21,10 @@ const API_URL = 'http://127.0.0.1:8000';
 const MainApp = () => {
   const { user, loading } = useAuth();
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('tab') || 'dashboard';
+  });
   const [files, setFiles] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null); // For EditModal
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);

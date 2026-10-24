@@ -11,9 +11,16 @@ export const AuthProvider = ({ children }) => {
     // Initial check
     useEffect(() => {
         const initAuth = async () => {
-            if (token) {
+            const params = new URLSearchParams(window.location.search);
+            const queryToken = params.get('token');
+            const activeToken = queryToken || token;
+            if (queryToken && queryToken !== token) {
+                localStorage.setItem('token', queryToken);
+                setToken(queryToken);
+            }
+            if (activeToken) {
                 try {
-                    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+                    axios.defaults.headers.common['Authorization'] = `Bearer ${activeToken}`;
                     const res = await axios.get('http://127.0.0.1:8000/auth/me');
                     setUser(res.data);
                 } catch (e) {

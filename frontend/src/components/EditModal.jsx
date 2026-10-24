@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     X, Save, FileText, Calendar, DollarSign, Building,
     AlertCircle, CheckCircle2, Clock, ShieldCheck, History,
-    Sparkles, Download, ExternalLink, Calculator, Percent,
+    Download, ExternalLink, Calculator, Percent,
     Coins, FileSearch, Layers, Cpu, Check, ArrowRight
 } from 'lucide-react';
 import axios from 'axios';
@@ -285,7 +285,7 @@ export const EditModal = ({ isOpen, onClose, file, onSave }) => {
                                             {t('lbl_vendor')}
                                         </label>
                                         <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                                            <Sparkles size={11} /> Extraction Regex/Layout
+                                            <Cpu size={11} /> Extraction Regex/Layout
                                         </span>
                                     </div>
                                     <div className="relative">

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layout, User, PieChart, FileText, Sparkles, FolderArchive } from 'lucide-react';
+import { Layout, User, PieChart, FileText, FileSearch, FolderArchive } from 'lucide-react';
 import clsx from 'clsx';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -14,7 +14,7 @@ export const Sidebar = ({ activeTab, onTabChange }) => {
     const menus = [
         { id: 'dashboard', label: t('nav_dashboard'), icon: PieChart },
         { id: 'documents', label: t('nav_documents'), icon: FileText },
-        { id: 'assistant', label: t('nav_assistant'), icon: Sparkles },
+        { id: 'assistant', label: t('nav_assistant'), icon: FileSearch },
         { id: 'categories', label: t('nav_categories'), icon: Layout },
         { id: 'profile', label: t('nav_profile'), icon: User },
     ];
@@ -72,8 +72,8 @@ export const Sidebar = ({ activeTab, onTabChange }) => {
                 className="p-5 border-t border-gray-200 dark:border-zinc-900 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors text-left"
             >
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold overflow-hidden shadow-md shrink-0">
-                        {name.charAt(0).toUpperCase()}
+                    <div className="w-10 h-10 rounded-2xl bg-blue-600 dark:bg-zinc-800 text-white dark:text-blue-400 border border-blue-500/20 dark:border-zinc-700 flex items-center justify-center shadow-xs shrink-0">
+                        <User size={18} strokeWidth={2.2} />
                     </div>
                     <div className="min-w-0">
                         <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{name}</p>
