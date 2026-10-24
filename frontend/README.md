@@ -1,16 +1,27 @@
-# React + Vite
+# Gestion Document — Frontend Client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Application web monopage (SPA) construite avec React 19 et Vite 7 pour la plateforme **Gestion Document**.
 
-Currently, two official plugins are available:
+## 🚀 Technologies Utilisées
+- **Framework & Rendu** : React 19
+- **Bundler & Build Tool** : Vite 7
+- **Système de Design & CSS** : Tailwind CSS v4
+- **Composants d'Icônes** : Lucide React
+- **Animations & Transitions** : Framer Motion
+- **Visualisation Financière** : Recharts
+- **Gestion des Dates & Formats** : date-fns
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 📦 Structure des Composants
+- `components/Dashboard.jsx` : Métriques clés, graphiques de dépenses et ventilation par catégorie.
+- `components/FileList.jsx` & `FileItem.jsx` : Gestion des factures, états de traitement et actions.
+- `components/EditModal.jsx` : Fiche comptable complète (HT, TVA, TTC) et piste d'audit en 6 étapes.
+- `components/ExportModal.jsx` : Exportation comptable vers Excel (.xlsx), CSV et JSON.
+- `components/AIAssistant.jsx` : Interface de requête en langage naturel connectée au moteur RAG.
+- `components/Profile.jsx` : Tableau de bord utilisateur, gestion du rôle RBAC et sécurité.
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🛠️ Démarrage Local
+```bash
+npm install
+npm run dev
+```
+L'application est accessible par défaut sur `http://localhost:5173`.

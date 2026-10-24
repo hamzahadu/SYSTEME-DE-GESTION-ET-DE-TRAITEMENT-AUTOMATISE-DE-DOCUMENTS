@@ -28,26 +28,26 @@ export const AIAssistant = ({ onOpenDocument }) => {
         }
     ]);
 
-    const suggestedPrompts = [
+    const suggestedQueries = [
         {
             icon: Coins,
             label: lang === 'fr' ? "Dépenses Totales" : "Total Spend",
-            prompt: lang === 'fr' ? "Combien avons-nous dépensé au total ?" : "How much have we spent in total?"
+            query: lang === 'fr' ? "Combien avons-nous dépensé au total ?" : "How much have we spent in total?"
         },
         {
             icon: Building2,
             label: lang === 'fr' ? "Abonnements & Logiciels" : "Software & Subs",
-            prompt: lang === 'fr' ? "Show all software and subscription expenses" : "Show all software and subscription expenses"
+            query: lang === 'fr' ? "Show all software and subscription expenses" : "Show all software and subscription expenses"
         },
         {
             icon: AlertCircle,
             label: lang === 'fr' ? "Factures à Vérifier" : "Needs Review",
-            prompt: lang === 'fr' ? "Quelles sont les factures nécessitant une vérification ?" : "Which invoices require human verification?"
+            query: lang === 'fr' ? "Quelles sont les factures nécessitant une vérification ?" : "Which invoices require human verification?"
         },
         {
             icon: FileText,
             label: lang === 'fr' ? "Factures par Fournisseur" : "Vendor Invoices",
-            prompt: lang === 'fr' ? "List all invoices from vendor SuperStore" : "List all invoices from vendor SuperStore"
+            query: lang === 'fr' ? "List all invoices from vendor SuperStore" : "List all invoices from vendor SuperStore"
         }
     ];
 
@@ -160,7 +160,7 @@ export const AIAssistant = ({ onOpenDocument }) => {
 
             {/* Chat Body */}
             <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 bg-[#FAFAFA] dark:bg-zinc-950/50 transition-colors">
-                {/* Expansive Suggested Prompts when single welcome message */}
+                {/* Suggested Queries when single welcome message */}
                 {messages.length === 1 && (
                     <motion.div
                         initial={{ opacity: 0, y: 10 }}
@@ -180,12 +180,12 @@ export const AIAssistant = ({ onOpenDocument }) => {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-1">
-                            {suggestedPrompts.map((item, idx) => {
+                            {suggestedQueries.map((item, idx) => {
                                 const Icon = item.icon;
                                 return (
                                     <button
                                         key={idx}
-                                        onClick={() => handleSend(item.prompt)}
+                                        onClick={() => handleSend(item.query)}
                                         className="flex items-center justify-between p-4 rounded-2xl bg-gray-50/80 dark:bg-zinc-800/60 hover:bg-blue-50/70 dark:hover:bg-blue-950/40 border border-gray-200/80 dark:border-zinc-700 hover:border-blue-300 dark:hover:border-blue-700 transition-all text-left group shadow-2xs"
                                     >
                                         <div className="flex items-center gap-3.5 min-w-0 pr-2">
@@ -197,7 +197,7 @@ export const AIAssistant = ({ onOpenDocument }) => {
                                                     {item.label}
                                                 </p>
                                                 <p className="text-xs text-gray-500 dark:text-zinc-400 truncate mt-0.5">
-                                                    "{item.prompt}"
+                                                    "{item.query}"
                                                 </p>
                                             </div>
                                         </div>
@@ -297,19 +297,19 @@ export const AIAssistant = ({ onOpenDocument }) => {
                 )}
             </div>
 
-            {/* Quick Prompts Bar (when conversation is active) */}
+            {/* Quick Queries Bar (when conversation is active) */}
             {messages.length > 1 && (
                 <div className="px-6 py-2.5 bg-white dark:bg-zinc-900 border-t border-gray-100 dark:border-zinc-800 flex items-center gap-2 overflow-x-auto transition-colors shrink-0">
                     <span className="text-[11px] font-bold text-gray-400 dark:text-zinc-500 shrink-0 uppercase tracking-wider">
                         {lang === 'fr' ? "Suggestions :" : "Suggestions:"}
                     </span>
-                    {suggestedPrompts.map((item, idx) => (
+                    {suggestedQueries.map((item, idx) => (
                         <button
                             key={idx}
-                            onClick={() => handleSend(item.prompt)}
+                            onClick={() => handleSend(item.query)}
                             className="whitespace-nowrap px-3 py-1.5 rounded-xl bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-xs text-gray-700 dark:text-zinc-300 font-medium border border-gray-200/70 dark:border-zinc-700 transition-colors shrink-0"
                         >
-                            {item.prompt}
+                            {item.query}
                         </button>
                     ))}
                 </div>

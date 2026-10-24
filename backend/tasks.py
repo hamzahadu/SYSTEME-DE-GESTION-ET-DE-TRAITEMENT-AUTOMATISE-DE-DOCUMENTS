@@ -468,7 +468,7 @@ def check_duplicates(file_id, invoice_number, vendor_name):
     
     for r in all_recs:
         if r.id == file_id: continue
-        if r.status != ProcessingStatus.COMPLETED: continue # Only check completed? Or all? User said "Duplicate detected"
+        if r.status != ProcessingStatus.COMPLETED: continue  # Check completed invoices
         
         meta = r.metadata
         if not meta: continue

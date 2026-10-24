@@ -127,7 +127,7 @@ const translations = {
         role_accountant: "Comptable",
         role_accountant_desc: "Gestion des factures, vérification des taxes et export de données",
         role_student: "Étudiant / Chercheur",
-        role_student_desc: "Mode projet PFE, analyse documentaire et requêtes IA avancées",
+        role_student_desc: "Mode projet PFE, analyse documentaire et requêtes sémantiques",
         role_viewer: "Observateur",
         role_viewer_desc: "Consultation en lecture seule des documents et tableaux de bord",
 
@@ -302,7 +302,7 @@ const translations = {
         role_accountant: "Accountant",
         role_accountant_desc: "Invoice verification, tax rate validation and batch data export",
         role_student: "Student / Researcher",
-        role_student_desc: "Master thesis mode, document inspection and AI prompt testing",
+        role_student_desc: "Master thesis mode, document analysis and semantic search",
         role_viewer: "Observer",
         role_viewer_desc: "Read-only access to documents, metrics and financial reports",
 
