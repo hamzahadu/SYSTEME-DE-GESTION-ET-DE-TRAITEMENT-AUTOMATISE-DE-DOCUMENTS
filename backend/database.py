@@ -15,9 +15,11 @@ DEFAULT_SQLITE_PATH = os.path.join(BASE_DIR, "docuprocess.db")
 # Reads from DATABASE_URL env var if set (e.g. Docker / PostgreSQL), defaults to local SQLite file
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DEFAULT_SQLITE_PATH}")
 
-# Fix for Heroku/Docker legacy postgres:// URLs
+# Fix for Heroku/Docker legacy postgres:// URLs and ensure psycopg2 driver is used
 if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
+elif DATABASE_URL.startswith("postgresql://") and not DATABASE_URL.startswith("postgresql+"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
 
 # SQLite requires check_same_thread=False for FastAPI multithreaded requests
 connect_args = {"check_same_thread": False} if "sqlite" in DATABASE_URL else {}

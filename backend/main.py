@@ -4,7 +4,7 @@ import shutil
 import json
 import asyncio
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from pydantic import BaseModel
 
 from fastapi import FastAPI, UploadFile, File, HTTPException, Request
