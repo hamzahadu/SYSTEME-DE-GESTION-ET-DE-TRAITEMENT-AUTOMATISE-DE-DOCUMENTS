@@ -6,7 +6,8 @@ torch
 transformers
 pillow
 pypdfium2
-python-doctr[torch]
+python-doctr
+torchvision
 opencv-python-headless
 pandas
 openpyxl
@@ -14,3 +15,7 @@ python-dateutil
 python-jose[cryptography]
 passlib[bcrypt]
 bcrypt
+filelock
+sqlalchemy
+psycopg2-binary
+scikit-learn

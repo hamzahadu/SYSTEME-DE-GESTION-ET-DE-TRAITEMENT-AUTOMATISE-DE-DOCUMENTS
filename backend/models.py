@@ -11,6 +11,7 @@ class ProcessingStatus(str, Enum):
     COMPLETED = "Completed"
     NEEDS_REVIEW = "Needs Review"
     FAILED = "Failed"
+    REJECTED = "Rejected"
 
 class FieldData(BaseModel):
     value: Any
@@ -62,7 +63,8 @@ class User(BaseModel):
     full_name: str
     hashed_password: str
     company_id: str
-    role: UserRole = UserRole.ADMIN
+    role: str = "admin"
+    phone: Optional[str] = None
     disabled: bool = False
 
 class Token(BaseModel):

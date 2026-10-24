@@ -55,6 +55,15 @@ export const AuthProvider = ({ children }) => {
         return true;
     };
 
+    const updateProfile = async (updates) => {
+        const token = localStorage.getItem('token');
+        const res = await axios.patch('http://127.0.0.1:8000/auth/me', updates, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        setUser(res.data);
+        return res.data;
+    };
+
     const logout = () => {
         localStorage.removeItem('token');
         setToken(null);
@@ -63,7 +72,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, login, signup, logout, loading }}>
+        <AuthContext.Provider value={{ user, token, login, signup, logout, updateProfile, loading }}>
             {children}
         </AuthContext.Provider>
     );

@@ -1,14 +1,17 @@
 @echo off
-echo Starting DocuProcess Prototype...
-echo --------------------------------
+echo Starting Gestion Document Platform (Master PFE)...
+echo -----------------------------------------------
 
-echo Starting Backend API...
-start "Backend API" cmd /k "cd backend && uvicorn main:app --reload"
+echo [1/3] Starting Backend API (FastAPI + PostgreSQL/SQLAlchemy)...
+start "Gestion Document - Backend API" cmd /k "call .venv\Scripts\activate.bat && cd backend && uvicorn main:app --reload --port 8000"
 
-echo Starting Backend Worker...
-start "Backend Worker" cmd /k "cd backend && huey_consumer tasks.huey"
+echo [2/3] Starting Background Worker (Huey OCR & Document Pipeline)...
+start "Gestion Document - Huey Worker" cmd /k "call .venv\Scripts\activate.bat && cd backend && python -m huey.bin.huey_consumer tasks.huey -w 2"
 
-echo Starting Frontend...
-start "Frontend" cmd /k "cd frontend && npm run dev"
+echo [3/3] Starting Frontend (Vite + React + Tailwind)...
+start "Gestion Document - Frontend UI" cmd /k "cd frontend && npm run dev"
 
-echo All services launched in separate windows.
+echo -----------------------------------------------
+echo All Gestion Document services launched in separate windows!
+echo Web UI: http://localhost:5173
+echo API Docs: http://127.0.0.1:8000/docs

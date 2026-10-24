@@ -9,13 +9,18 @@ import { Profile } from './components/Profile';
 import { Categories } from './components/Categories';
 import { EditModal } from './components/EditModal';
 import { UploadArea } from './components/UploadArea';
+import { AIAssistant } from './components/AIAssistant';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { LanguageProvider, useLanguage } from './context/LanguageContext';
+import { CurrencyProvider } from './context/CurrencyContext';
 import axios from 'axios';
 
 const API_URL = 'http://127.0.0.1:8000';
 
 const MainApp = () => {
   const { user, loading } = useAuth();
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [files, setFiles] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null); // For EditModal
@@ -42,7 +47,10 @@ const MainApp = () => {
 
     const fetchStatus = async () => {
       try {
-        const res = await axios.get(`${API_URL}/status`);
+        const token = localStorage.getItem('token');
+        const res = await axios.get(`${API_URL}/status`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
         // Sort by upload_time desc
         const sorted = res.data.sort((a, b) => new Date(b.upload_time) - new Date(a.upload_time));
         setFiles(sorted);
@@ -79,38 +87,22 @@ const MainApp = () => {
     });
 
     try {
-      const token = user?.access_token || localStorage.getItem('token'); // Fallback or ensure user object has it. 
-      // check AuthContext, usually user object might not have token directly if not stored there.
-      // But assuming user object structure from context. If not, we might need to get it from storage.
-      // Let's assume standard Bearer token is needed. 
-      // The previous code didn't use token for status call? 
-      // Wait, polling uses axios.get(status). Does it attach token?
-      // checking AuthContext might be needed. 
-      // actually main.py uses oauth2_scheme, so it needs token.
-      // let's assume axios interceptor or manual header. 
-      // checking App.jsx imports... import { AuthProvider, useAuth } from './context/AuthContext';
-      // I don't see axios interceptor setup in App.jsx. 
-      // Let's check AuthContext to see if it sets default headers.
-      // For now, I will explicitly try to get token from localStorage if user doesn't have it.
-
+      const token = localStorage.getItem('token');
       const config = {
         headers: {
           'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         }
       };
 
       await axios.post(`${API_URL}/upload`, formData, config);
 
-      // Success: Polling will update the list with real data soon.
-      // We could manually fetch status here to be faster.
-      const res = await axios.get(`${API_URL}/status`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
+      const res = await axios.get(`${API_URL}/status`, { headers: { 'Authorization': `Bearer ${token}` } });
       const sorted = res.data.sort((a, b) => new Date(b.upload_time) - new Date(a.upload_time));
       setFiles(sorted);
 
     } catch (error) {
       console.error("Upload failed", error);
-      // Mark as failed in UI
       setFiles(prev => prev.map(f =>
         newFiles.find(nf => nf.id === f.id)
           ? { ...f, status: 'Failed', metadata: { ...f.metadata, vendor_name: 'Upload Error' } }
@@ -126,9 +118,10 @@ const MainApp = () => {
 
   const handleSave = async (docId, updates) => {
     try {
-      await axios.patch(`${API_URL}/documents/${docId}`, updates);
-      // Local update (optimistic or wait for poll)
-      // Poll will catch it, but we can force refresh if needed
+      const token = localStorage.getItem('token');
+      await axios.patch(`${API_URL}/documents/${docId}`, updates, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
       setIsEditModalOpen(false);
     } catch (error) {
       console.error("Update failed", error);
@@ -136,7 +129,24 @@ const MainApp = () => {
     }
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  const handleClearHistory = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API_URL}/documents/clear`, {}, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      setFiles([]);
+    } catch (error) {
+      console.error("Failed to clear history", error);
+      alert("Failed to clear history");
+    }
+  };
+
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-zinc-950 text-gray-500 dark:text-zinc-400">
+      Loading...
+    </div>
+  );
 
   // Routing Logic
   if (!user) {
@@ -146,11 +156,15 @@ const MainApp = () => {
 
   // Authenticated View
   return (
-    <div className="flex h-screen bg-[#F3F5F7] font-sans text-gray-900 overflow-hidden">
+    <div className="flex h-screen bg-[#F3F5F7] dark:bg-zinc-950 font-sans text-gray-900 dark:text-zinc-100 overflow-hidden transition-colors">
       <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
 
       <div className="flex-1 flex flex-col min-w-0 ml-64">
-        <TopBar title={activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} />
+        <TopBar
+          title={t(`nav_${activeTab}`) || activeTab}
+          files={files}
+          onSelectDocument={handleEdit}
+        />
 
         <main className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth">
           <div className="w-full">
@@ -162,8 +176,18 @@ const MainApp = () => {
                 <FileList
                   files={files}
                   onEdit={handleEdit}
+                  onClear={handleClearHistory}
                 />
               </>
+            )}
+
+            {activeTab === 'assistant' && (
+              <AIAssistant
+                onOpenDocument={(docId) => {
+                  const target = files.find(f => f.id === docId);
+                  if (target) handleEdit(target);
+                }}
+              />
             )}
 
             {activeTab === 'categories' && (
@@ -190,8 +214,14 @@ const MainApp = () => {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <MainApp />
-    </AuthProvider>
+    <ThemeProvider>
+      <LanguageProvider>
+        <CurrencyProvider>
+          <AuthProvider>
+            <MainApp />
+          </AuthProvider>
+        </CurrencyProvider>
+      </LanguageProvider>
+    </ThemeProvider>
   );
 }

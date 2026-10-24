@@ -106,6 +106,37 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 async def read_users_me(current_user: User = Depends(get_current_user)):
     return current_user
 
+class ProfileUpdateRequest(BaseModel):
+    full_name: Optional[str] = None
+    role: Optional[str] = None
+    phone: Optional[str] = None
+    current_password: Optional[str] = None
+    new_password: Optional[str] = None
+
+@app.patch("/auth/me", response_model=User)
+async def update_profile(
+    body: ProfileUpdateRequest,
+    current_user: User = Depends(get_current_user)
+):
+    updates = {}
+    if body.full_name:
+        updates["full_name"] = body.full_name
+    if body.role:
+        updates["role"] = body.role
+    if body.phone is not None:
+        updates["phone"] = body.phone
+
+    if body.new_password:
+        if not body.current_password or not verify_password(body.current_password, current_user.hashed_password):
+            raise HTTPException(status_code=400, detail="Mot de passe actuel incorrect")
+        updates["hashed_password"] = get_password_hash(body.new_password)
+
+    from database import update_user_profile
+    updated = update_user_profile(current_user.id, updates)
+    if not updated:
+        raise HTTPException(status_code=500, detail="Échec de la mise à jour du profil")
+    return updated
+
 @app.post("/upload", response_model=List[str])
 async def upload_files(
     files: List[UploadFile] = File(...),
@@ -223,13 +254,9 @@ async def bulk_delete(
 
 @app.post("/documents/clear")
 async def clear_history(current_user: User = Depends(get_current_user)):
-    # Currently archive_all_records archives EVERYTHING. 
-    # We need to update it to only archive for company.
-    # For now, let's just do manual loop here for safety.
-    records = get_all_records(company_id=current_user.company_id)
-    for r in records:
-        update_record(r.id, {"archived": True})
-    return {"status": "cleared"}
+    from database import clear_company_history
+    cleared_count = clear_company_history(current_user.company_id)
+    return {"status": "cleared", "cleared_count": cleared_count}
 
 @app.get("/events")
 async def events(request: Request):
@@ -628,3 +655,32 @@ async def export_json(
 ):
     data = get_flat_data(current_user.company_id, start_date, end_date, category, vendor)
     return data
+
+# --- RAG (Retrieval-Augmented Generation) Endpoints ---
+
+class RAGQueryModel(BaseModel):
+    query: str
+
+@app.post("/rag/query")
+async def rag_query(
+    body: RAGQueryModel,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Semantic search and natural language synthesis over company invoice documents.
+    """
+    from rag_service import rag_service
+    result = rag_service.query(body.query, company_id=current_user.company_id)
+    return result
+
+@app.post("/rag/reindex")
+async def rag_reindex(
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Indexes all existing documents into vector chunks for the user's company.
+    """
+    from rag_service import rag_service
+    count = rag_service.reindex_company_documents(current_user.company_id)
+    return {"status": "success", "indexed_documents": count}
+

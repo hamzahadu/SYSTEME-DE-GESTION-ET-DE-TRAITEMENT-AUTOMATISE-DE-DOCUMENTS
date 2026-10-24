@@ -54,8 +54,16 @@ def run_stages_ocr(file_path):
     print(f"Stage 1: Running OCR on {file_path}")
     from doctr.io import DocumentFile
     
+    doc = None
     if file_path.lower().endswith(".pdf"):
-        doc = DocumentFile.from_pdf(file_path)
+        try:
+            doc = DocumentFile.from_pdf(file_path)
+        except Exception as e:
+            print(f"from_pdf failed ({e}), attempting from_images fallback...")
+            try:
+                doc = DocumentFile.from_images(file_path)
+            except Exception as e2:
+                raise ValueError(f"Fichier illisible ou format non reconnu: {e}")
     else:
         doc = DocumentFile.from_images(file_path)
         
@@ -83,43 +91,64 @@ def classify_document(text):
     print("Stage 2: Classifying Document")
     lower_text = text.lower()
     
-    # Simple keyword counting
-    scores = {
-        "invoice": 0,
-        "receipt": 0,
-        "contract": 0,
-        "purchase_order": 0,
-        "delivery_note": 0
-    }
-    
-    # Keywords
+    # 0. Check for Resume / CV / General non-financial documents with word boundaries
+    resume_keywords = [
+        "curriculum vitae", "resume", "experience", "education", "skills",
+        "certifications", "bachelor", "master", "formation",
+        "compétences", "profil", "coordonnées", "langues", "summary", "university",
+        "diplôme", "baccalauréat", "stage", "internship"
+    ]
+    resume_matches = sum(1 for w in resume_keywords if re.search(r'\b' + re.escape(w) + r'\b', lower_text))
+
+    # Keywords for accounting / financial documents with word boundaries
     kws = {
-        "invoice": ["invoice", "inv#", "bill to", "due date", "balance due", "tax"],
-        "receipt": ["receipt", "total", "cash", "credit card", "change", "store"],
-        "contract": ["agreement", "contract", "between", "parties", "witnesseth", "signed"],
-        "purchase_order": ["purchase order", "po#", "p.o.", "order date", "vendor"],
-        "delivery_note": ["delivery note", "packing slip", "despatch"]
+        "invoice": [
+            "invoice", "facture", "inv#", "bill to", "due date", "balance due", "amount due", "tax", "tva", "montant",
+            "subtotal", "sous-total", "total due", "remise", "discount", "price", "prix", "qty", "quantity",
+            "quantité", "amount", "solde", "devis", "purchase order", "bon de commande", "client", "customer", "payment",
+            "paiement", "banque", "iban", "rib", "ttc", "ht", "ice", "rc", "patente"
+        ],
+        "receipt": [
+            "receipt", "reçu", "ticket de caisse", "total ticket", "cash", "espèces", "credit card",
+            "change due", "supermarket", "superstore"
+        ],
+        "contract": ["agreement", "contract", "contrat", "between the parties", "witnesseth", "signed by"],
+        "purchase_order": ["purchase order", "bon de commande", "p.o. number", "order date"],
+        "delivery_note": ["delivery note", "bon de livraison", "packing slip", "despatch advice"]
     }
     
+    scores = {cls: 0 for cls in kws}
     for cls, words in kws.items():
         for w in words:
-            if w in lower_text:
+            if re.search(r'\b' + re.escape(w) + r'\b', lower_text):
                 scores[cls] += 1
                 
     # Detect Layout hints (e.g. "Invoice" at top)
-    header = lower_text[:200]
-    if "invoice" in header: scores["invoice"] += 2
-    if "receipt" in header: scores["receipt"] += 2
-    if "purchase order" in header: scores["purchase_order"] += 2
-    
+    header = lower_text[:300]
+    if re.search(r'\b(invoice|facture)\b', header): scores["invoice"] += 3
+    if re.search(r'\b(receipt|reçu)\b', header): scores["receipt"] += 3
+    if re.search(r'\b(purchase order|bon de commande)\b', header): scores["purchase_order"] += 3
+
+    # Check for presence of monetary values (e.g. $100.00, 150.00 €, 200 DH, etc.)
+    has_money = bool(re.search(r'[\$€£]|mad|dh|usd|eur|\b\d+[.,]\d{2}\b', lower_text))
+    if has_money:
+        scores["invoice"] += 1
+        scores["receipt"] += 1
+
     # Winner
     best_type = max(scores, key=scores.get)
-    if scores[best_type] < 2:
-        return "unknown", 0.0
+
+    # If document has resume signals and NO or very low invoice score -> Resume
+    if resume_matches >= 3 and scores["invoice"] <= 1 and scores["receipt"] <= 1:
+        return "resume", 0.95
+
+    # If it has financial signals or score >= 1 -> financial document
+    if scores[best_type] >= 1:
+        confidence = min(scores[best_type] / 4.0, 1.0)
+        return best_type, max(confidence, 0.75)
         
-    # Heuristic confidence
-    confidence = min(scores[best_type] / 5.0, 1.0)
-    return best_type, confidence
+    # Non-financial / unknown
+    return "unknown", 0.0
 
 # --- Stage 3: Extraction ---
 
@@ -156,39 +185,45 @@ def strategy_donut(context, field):
     return context.donut_data.get(field)
 
 def run_donut(file_path):
-    print("Running Donut AI...")
-    import pypdfium2 as pdfium
-    
-    pdf = pdfium.PdfDocument(file_path)
-    page = pdf[0]
-    bitmap = page.render(scale=1.5) 
-    pil_image = bitmap.to_pil()
-    
-    processor, model = get_donut_model()
-    import torch
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    if os.getenv("ENABLE_DONUT", "false").lower() != "true":
+        return {}
+    try:
+        print("Running Donut AI fallback...")
+        import pypdfium2 as pdfium
+        
+        pdf = pdfium.PdfDocument(file_path)
+        page = pdf[0]
+        bitmap = page.render(scale=1.5) 
+        pil_image = bitmap.to_pil()
+        
+        processor, model = get_donut_model()
+        import torch
+        device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    pixel_values = processor(pil_image, return_tensors="pt").pixel_values.to(device)
-    task_prompt = "<s_cord-v2>"
-    decoder_input_ids = processor.tokenizer(task_prompt, add_special_tokens=False, return_tensors="pt").input_ids.to(device)
-    
-    outputs = model.generate(
-        pixel_values,
-        decoder_input_ids=decoder_input_ids,
-        max_length=384, 
-        early_stopping=True,
-        pad_token_id=processor.tokenizer.pad_token_id,
-        eos_token_id=processor.tokenizer.eos_token_id,
-        use_cache=True,
-        num_beams=1,
-        bad_words_ids=[[processor.tokenizer.unk_token_id]],
-        return_dict_in_generate=True,
-    )
-    
-    sequence = processor.batch_decode(outputs.sequences)[0]
-    sequence = sequence.replace(processor.tokenizer.eos_token, "").replace(processor.tokenizer.pad_token, "")
-    sequence = sequence.replace(task_prompt, "")
-    return processor.token2json(sequence)
+        pixel_values = processor(pil_image, return_tensors="pt").pixel_values.to(device)
+        task_prompt = "<s_cord-v2>"
+        decoder_input_ids = processor.tokenizer(task_prompt, add_special_tokens=False, return_tensors="pt").input_ids.to(device)
+        
+        outputs = model.generate(
+            pixel_values,
+            decoder_input_ids=decoder_input_ids,
+            max_length=384, 
+            early_stopping=True,
+            pad_token_id=processor.tokenizer.pad_token_id,
+            eos_token_id=processor.tokenizer.eos_token_id,
+            use_cache=True,
+            num_beams=1,
+            bad_words_ids=[[processor.tokenizer.unk_token_id]],
+            return_dict_in_generate=True,
+        )
+        
+        sequence = processor.batch_decode(outputs.sequences)[0]
+        sequence = sequence.replace(processor.tokenizer.eos_token, "").replace(processor.tokenizer.pad_token, "")
+        sequence = sequence.replace(task_prompt, "")
+        return processor.token2json(sequence)
+    except Exception as e:
+        print(f"[Donut Fallback Skipped] {e}")
+        return {}
 
 def extract_fields_progressive(file_id, context):
     """
@@ -263,9 +298,10 @@ def extract_fields_progressive(file_id, context):
                 elif param == "top_header":
                      if context.blocks: val = context.blocks[0].text # Naive first block
             elif strat_type == "donut":
-                 if context.donut_data is None:
-                     context.donut_data = run_donut(context.file_path)
-                 val = context.donut_data.get(param)
+                 if best_val is None and not candidates:
+                     if context.donut_data is None:
+                         context.donut_data = run_donut(context.file_path)
+                     val = context.donut_data.get(param)
             
             if val:
                 # Clean value
@@ -461,6 +497,34 @@ def process_document(file_id, file_path):
         
         print(f"[{file_id}] Classified as {doc_type} ({type_conf})")
         
+        # Fast exit for non-financial documents (Resumes, CVs, generic PDFs with no financial info)
+        if doc_type in ["resume", "unknown"]:
+            is_cv = doc_type == "resume"
+            vendor_tag = "CV / Profil (Non-Facture)" if is_cv else "Document Non-Comptable"
+            reject_msg = (
+                "Document non comptable détecté (CV ou profil). Seules les factures et reçus sont traités."
+                if is_cv
+                else "Document non comptable détecté (aucune donnée financière ou de facturation identifiée)."
+            )
+            meta = FileMetadata(
+                document_type=doc_type,
+                confidence=0.0,
+                vendor_name=vendor_tag,
+                extracted_fields={},
+                extracted_data={"is_non_financial": True, "reason": reject_msg}
+            )
+            meta_dict = meta.dict()
+            meta_dict["ocr_full_text"] = full_text[:1000]
+            update_status(
+                file_id,
+                ProcessingStatus.REJECTED,
+                meta_dict,
+                error=reject_msg,
+                processing_state=ProcessingState.COMPLETED
+            )
+            print(f"[{file_id}] Fast exit: Rejected as non-financial document ({doc_type}).")
+            return
+
         # Init Metadata (Temporary Confidence)
         meta = FileMetadata(
             document_type=doc_type,
@@ -561,8 +625,17 @@ def process_document(file_id, file_path):
              final_status = ProcessingStatus.COMPLETED
              final_state = ProcessingState.COMPLETED
              
-        update_status(file_id, final_status, meta.dict(), processing_state=final_state)
+        meta_dict = meta.dict()
+        meta_dict["ocr_full_text"] = full_text
+        update_status(file_id, final_status, meta_dict, processing_state=final_state)
         print(f"Pipeline Finished {file_id}: {final_status} (Conf: {final_conf})")
+
+        # Automatically index document chunks for RAG semantic search
+        try:
+            from rag_service import rag_service
+            rag_service.index_document(file_id)
+        except Exception as rag_err:
+            print(f"[{file_id}] RAG indexing note: {rag_err}")
 
     except Exception as e:
         print(f"Error processing {file_id}: {e}")
